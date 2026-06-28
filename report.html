@@ -22,7 +22,7 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 .btn{padding:6px 14px;border-radius:8px;border:none;cursor:pointer;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:600;transition:all 0.15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
 .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border);}.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
 .btn-pdf{background:var(--accent2);color:#fff;}.btn-pdf:hover{background:#f06030;}
-main{max-width:1160px;margin:0 auto;padding:22px 20px;}
+main{padding:22px 20px;}
 .stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px;}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:13px 15px;border-top:2px solid transparent;}
 .stat-card.ca{border-top-color:var(--accent);}.stat-card.cb{border-top-color:var(--blue);}.stat-card.cg{border-top-color:var(--green);}.stat-card.cr{border-top-color:var(--red);}
@@ -79,8 +79,7 @@ tfoot td:first-child{text-align:left;font-family:'Sarabun',sans-serif;font-size:
 @media(max-width:820px){
   .stat-strip{grid-template-columns:repeat(2,1fr);}
   .fuel-bar-grid{grid-template-columns:1fr;}
-  .gs-header{padding:0 14px;}main{padding:14px 12px;}
-  .gs-nav-item .nav-text{display:none;}
+  main{padding:14px 12px;}
 }
 
 /* ── LIGHT MODE ── */
@@ -113,34 +112,70 @@ body.light #status_bar{color:var(--muted);}
 @media print{body,body.light{background:#fff!important;color:#111!important;}}
 
 
+.chart-tab{padding:3px 9px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-family:'Sarabun',sans-serif;cursor:pointer;transition:all 0.15s;}
+.chart-tab.active{background:var(--accent);border-color:var(--accent);color:#0d1117;font-weight:700;}
+.chart-tab:hover:not(.active){border-color:var(--accent);color:var(--accent);}
 @media(max-width:820px){.chart-legend{gap:9px;}}
 
+/* ── SIDEBAR LAYOUT ── */
+.gs-layout{display:flex;min-height:100vh;}
+.gs-sidebar{width:216px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;padding:14px 10px;z-index:200;transform:translateX(-216px);transition:transform 0.25s cubic-bezier(0.4,0,0.2,1);box-shadow:4px 0 24px rgba(0,0,0,0.25);}
+body.sidebar-open .gs-sidebar{transform:translateX(0);}
+.gs-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:199;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
+body.sidebar-open .gs-backdrop{display:block;}
+.gs-sidebar-top{display:flex;align-items:center;gap:9px;padding:4px 8px;margin-bottom:4px;}
+.gs-sidebar-divider{height:1px;background:var(--border);margin:10px 0;}
+.gs-nav{display:flex;flex-direction:column;gap:2px;flex:1;}
+.gs-nav-item{padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:9px;transition:all 0.15s;border-bottom:none!important;white-space:nowrap;}
+.gs-nav-item:hover{background:rgba(255,255,255,0.05);color:var(--text);}
+.gs-nav-item.active{background:rgba(240,165,0,0.12);color:var(--accent);}
+.gs-sidebar-footer{margin-top:auto;padding-top:12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;}
+.gs-main{margin-left:0;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.gs-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:50;}
+body.light .gs-sidebar{background:#fff;border-color:#ddd8d0;}
+body.light .gs-topbar{background:#fff;border-color:#ddd8d0;}
+body.light .gs-nav-item:hover{background:rgba(0,0,0,0.04);}
+body.light .gs-nav-item.active{background:rgba(212,146,10,0.1);}
+body.light .gs-backdrop{background:rgba(0,0,0,0.3);}
+.btn-menu{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);transition:all 0.2s;flex-shrink:0;}
+.btn-menu:hover{border-color:var(--accent);color:var(--accent);}
+
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-<body>
+<body class="sidebar-open">
 <div class="print-header"><h1>รายงานสรุปประจำวัน</h1><p id="print_subtitle">พิมพ์เมื่อ: —</p></div>
 
-<header class="gs-header no-print">
-  <div class="gs-header-top">
-    <div class="gs-logo">
-      <div class="gs-logo-icon" style="background:var(--accent2);"><svg xmlns="http://www.w3.org/2000/svg" style="width:17px;height:17px;stroke-width:2;color:#fff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg></div>
-      <div><div class="gs-logo-name">รายงานสรุป</div><div class="gs-logo-sub">Gas Station Report</div></div>
-    </div>
-    <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;">
-      <button class="btn btn-ghost" onclick="reloadFirebase()" id="btn_reload"><svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg> โหลดใหม่</button>
-      <button class="btn btn-csv no-print" onclick="exportCSV()" id="btn_csv" style="display:none;"><svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></svg> Export CSV</button>
-      <button class="btn btn-pdf no-print" onclick="printReport()"><svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> PDF</button>
-      <button class="theme-toggle no-print" id="theme_btn" onclick="toggleTheme()" title="สลับธีม">
-        <span id="theme_icon"><svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></span>
-      </button>
-    </div>
+<div class="gs-layout">
+<aside class="gs-sidebar no-print">
+  <div class="gs-sidebar-top">
+    <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;stroke-width:2.2;color:#0d1117" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg></div>
+    <div><div class="gs-logo-name">ปั๊มน้ำมัน</div><div class="gs-logo-sub">Gas Station Manager</div></div>
   </div>
+  <div class="gs-sidebar-divider"></div>
   <nav class="gs-nav">
-    <a href="dashboard.html" class="gs-nav-item"><svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg><span class="nav-text">Dashboard</span></a>
-    <a href="index.html" class="gs-nav-item"><svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M8.5 20v-6l1.5-2 1.5 2v6"/><path d="m14 11-2 2-2-2"/><line x1="12" x2="12" y1="13" y2="20"/></svg><span class="nav-text">บันทึกวัน</span></a>
-    <span class="gs-nav-item active"><svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg><span class="nav-text">รายงาน</span></span>
+    <a href="dashboard.html" class="gs-nav-item"><svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>Dashboard</a>
+    <a href="index.html" class="gs-nav-item"><svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M8.5 20v-6l1.5-2 1.5 2v6"/><path d="m14 11-2 2-2-2"/><line x1="12" x2="12" y1="13" y2="20"/></svg>บันทึกวัน</a>
+    <span class="gs-nav-item active"><svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>รายงาน</span>
   </nav>
-</header>
+  <div class="gs-sidebar-footer">
+    <button class="theme-toggle" id="theme_btn" onclick="toggleTheme()" title="สลับธีม"><span id="theme_icon"><svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></span></button>
+  </div>
+</aside>
+<div class="gs-backdrop" onclick="toggleSidebar()"></div>
+<div class="gs-main">
+<div class="gs-topbar no-print">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button class="btn-menu no-print" onclick="toggleSidebar()" title="เมนู"><svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button>
+    <span style="font-size:13px;font-weight:700;">รายงานสรุป</span>
+    <span class="gs-logo-sub" style="font-size:11px;">Gas Station Report</span>
+  </div>
+  <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;">
+    <button class="btn btn-ghost" onclick="reloadFirebase()" id="btn_reload"><svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg> โหลดใหม่</button>
+    <button class="btn btn-csv no-print" onclick="exportCSV()" id="btn_csv" style="display:none;"><svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></svg> Export CSV</button>
+    <button class="btn btn-pdf no-print" onclick="printReport()"><svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> PDF</button>
+  </div>
+</div>
 
 <main id="main_content">
   <div id="loading"><div class="spinner"></div>กำลังโหลดข้อมูล...</div>
@@ -148,12 +183,32 @@ body.light #status_bar{color:var(--muted);}
 
   <!-- FILTER BAR -->
   <div class="filter-bar no-print" id="filter_bar" style="display:none;">
-    <label><svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;stroke-width:2;display:inline;vertical-align:-1px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>/label>
+    <label><svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;stroke-width:2;display:inline;vertical-align:-1px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></label>
     <select id="filter_month" onchange="render()"><option value="">ทุกเดือน</option></select>
     <label>ตั้งแต่</label><input type="date" id="filter_from" onchange="render()">
     <label>ถึง</label><input type="date" id="filter_to" onchange="render()">
     <button class="btn btn-ghost" style="padding:5px 11px;font-size:12px;" onclick="clearFilters()"><svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;stroke-width:2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg> ล้างตัวกรอง</button>
     <span id="status_bar">—</span>
+  </div>
+
+  <!-- CHART SECTION -->
+  <div id="chart_section" style="display:none;margin-bottom:24px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="fuel-bar-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:7px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">ยอดขาย <span id="chart_month_label" style="color:var(--accent);"></span></div>
+          <div style="display:flex;gap:5px;">
+            <button class="chart-tab active" id="tab_line" onclick="switchChartType('line')">เส้น</button>
+            <button class="chart-tab" id="tab_bar" onclick="switchChartType('bar')">แท่ง</button>
+          </div>
+        </div>
+        <div style="position:relative;height:200px;"><canvas id="salesChart"></canvas></div>
+      </div>
+      <div class="fuel-bar-card">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">ลิตรรายวัน (stacked)</div>
+        <div style="position:relative;height:200px;"><canvas id="literChart"></canvas></div>
+      </div>
+    </div>
   </div>
 
   <div id="report_body" style="display:none;"></div>
@@ -167,6 +222,8 @@ body.light #status_bar{color:var(--muted);}
     </div>
   </div>
 </main>
+</div><!-- /gs-main -->
+</div><!-- /gs-layout -->
 
 <script>
 const MONTHS_TH=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -242,7 +299,11 @@ function render(){
   }
   body.innerHTML=html;
   document.getElementById('print_subtitle').textContent=`พิมพ์เมื่อ: ${new Date().toLocaleString('th-TH')} · แสดง ${keys.length} กะ`;
+  renderCharts();
 }
+
+// ── SIDEBAR TOGGLE ──
+function toggleSidebar(){document.body.classList.toggle('sidebar-open');}
 
 // ── THEME TOGGLE ──
 function toggleTheme(){
@@ -250,6 +311,7 @@ function toggleTheme(){
   document.body.classList.toggle('light',isDark);
   localStorage.setItem('gs_theme',isDark?'light':'dark');
   updateThemeIcon();
+  if(document.getElementById('chart_section').style.display!=='none')renderCharts();
 }
 function updateThemeIcon(){
   const isLight=document.body.classList.contains('light');
@@ -321,6 +383,7 @@ function switchChartType(type){
   _chartType=type;
   document.getElementById('tab_line').classList.toggle('active',type==='line');
   document.getElementById('tab_bar').classList.toggle('active',type==='bar');
+  renderCharts();
 }
 
 function getChartColors(alpha=1){
@@ -471,6 +534,7 @@ function renderCharts(){
   }
 
 function printReport(){const keys=getFilteredKeys();document.getElementById('print_subtitle').textContent=`พิมพ์เมื่อ: ${new Date().toLocaleString('th-TH')} · แสดง ${keys.length} กะ`;window.print();}
+document.addEventListener('DOMContentLoaded',()=>{applyStoredTheme();});
 </script>
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -480,8 +544,8 @@ const app=initializeApp(FIREBASE_CONFIG);const db=getFirestore(app);let _unsub=n
 function mergeData(loaded){Object.keys(sheetData).forEach(k=>delete sheetData[k]);Object.assign(sheetData,loaded);}
 async function loadFromFirebase(){const docRef=doc(db,'gas_station','daily_records');const snap=await getDoc(docRef);if(!snap.exists())return{};return snap.data().records||{};}
 function startRealtimeSync(){if(_unsub)_unsub();const docRef=doc(db,'gas_station','daily_records');_unsub=onSnapshot(docRef,(snap)=>{if(!snap.exists())return;mergeData(snap.data().records||{});if(typeof populateMonthFilter==='function')populateMonthFilter();if(typeof render==='function')render();document.getElementById('status_bar').textContent=`Real-time · ${Object.keys(sheetData).length} วัน`;});}
-window.reloadFirebase=async function(){const btn=document.getElementById('btn_reload');btn.textContent='⏳...';btn.disabled=true;try{mergeData(await loadFromFirebase());if(typeof populateMonthFilter==='function')populateMonthFilter();if(typeof render==='function')render();document.getElementById('loading').style.display='none';document.getElementById('filter_bar').style.display='flex';document.getElementById('report_body').style.display='block';document.getElementById('setup_card').style.display='none';btn.textContent='✅ โหลดแล้ว';setTimeout(()=>{btn.textContent='<svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg> โหลดใหม่';btn.disabled=false;},1500);}catch(e){btn.textContent='❌ ล้มเหลว';btn.disabled=false;setTimeout(()=>{btn.textContent='<svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg> โหลดใหม่';},2000);}};
-async function initLoad(){try{mergeData(await loadFromFirebase());document.getElementById('loading').style.display='none';document.getElementById('filter_bar').style.display='flex';document.getElementById('report_body').style.display='block';if(typeof populateMonthFilter==='function')populateMonthFilter();if(typeof render==='function')render();startRealtimeSync();}catch(e){document.getElementById('loading').style.display='none';document.getElementById('setup_card').style.display='block';document.getElementById('setup_error').textContent='❌ '+e.message;}}
+window.reloadFirebase=async function(){const btn=document.getElementById('btn_reload');btn.textContent='⏳...';btn.disabled=true;try{mergeData(await loadFromFirebase());if(typeof populateMonthFilter==='function')populateMonthFilter();if(typeof render==='function')render();document.getElementById('loading').style.display='none';document.getElementById('filter_bar').style.display='flex';document.getElementById('report_body').style.display='block';document.getElementById('setup_card').style.display='none';document.getElementById('btn_csv').style.display='flex';btn.textContent='✅ โหลดแล้ว';setTimeout(()=>{btn.textContent='<svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg> โหลดใหม่';btn.disabled=false;},1500);}catch(e){btn.textContent='❌ ล้มเหลว';btn.disabled=false;setTimeout(()=>{btn.textContent='<svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg> โหลดใหม่';},2000);}};
+async function initLoad(){try{mergeData(await loadFromFirebase());document.getElementById('loading').style.display='none';document.getElementById('filter_bar').style.display='flex';document.getElementById('report_body').style.display='block';document.getElementById('btn_csv').style.display='flex';if(typeof populateMonthFilter==='function')populateMonthFilter();if(typeof render==='function')render();startRealtimeSync();}catch(e){document.getElementById('loading').style.display='none';document.getElementById('setup_card').style.display='block';document.getElementById('setup_error').textContent='❌ '+e.message;}}
 initLoad();
 </script>
 

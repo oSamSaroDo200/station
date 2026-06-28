@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard — ปั๊มน้ำมัน</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -40,7 +39,7 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 .fb-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
 
 /* ── MAIN ── */
-main{max-width:1200px;margin:0 auto;padding:22px 20px;}
+main{padding:22px 20px;}
 
 /* ── TODAY/MONTH TOGGLE ── */
 .period-toggle{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:3px;}
@@ -146,56 +145,67 @@ body.light thead th{background:#f0ede8;}
 @media(max-width:900px){
   .stat-grid{grid-template-columns:repeat(2,1fr);}
   .grid-2,.grid-3,.grid-3-1{grid-template-columns:1fr;}
-  .gs-header{padding:0 14px;}
   main{padding:14px 12px;}
   .hero-strip{flex-direction:column;text-align:center;}
   .hero-div{display:none;}
-  .gs-nav-item .nav-text{display:none;}
 }
-
-/* ── CHART ── */
-.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:20px;}
-.chart-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
-.chart-card-title{font-size:11px;font-weight:700;letter-spacing:0.5px;color:var(--muted);display:flex;align-items:center;gap:6px;}
-.chart-tabs{display:flex;gap:3px;}
-.chart-tab{padding:3px 9px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-family:'Sarabun',sans-serif;cursor:pointer;transition:all 0.15s;}
-.chart-tab.active{background:var(--accent);border-color:var(--accent);color:#0d1117;font-weight:700;}
-.chart-tab:hover:not(.active){border-color:var(--accent);color:var(--accent);}
-canvas{display:block;}
-body.light .chart-card{background:#fff;}
-
+/* ── SIDEBAR LAYOUT ── */
+.gs-layout{display:flex;min-height:100vh;}
+.gs-sidebar{width:216px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;padding:14px 10px;z-index:200;transform:translateX(-216px);transition:transform 0.25s cubic-bezier(0.4,0,0.2,1);box-shadow:4px 0 24px rgba(0,0,0,0.25);}
+body.sidebar-open .gs-sidebar{transform:translateX(0);}
+.gs-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:199;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
+body.sidebar-open .gs-backdrop{display:block;}
+.gs-sidebar-top{display:flex;align-items:center;gap:9px;padding:4px 8px;margin-bottom:4px;}
+.gs-sidebar-divider{height:1px;background:var(--border);margin:10px 0;}
+.gs-nav{display:flex;flex-direction:column;gap:2px;flex:1;}
+.gs-nav-item{padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:9px;transition:all 0.15s;border-bottom:none!important;white-space:nowrap;}
+.gs-nav-item:hover{background:rgba(255,255,255,0.05);color:var(--text);}
+.gs-nav-item.active{background:rgba(240,165,0,0.12);color:var(--accent);}
+.gs-sidebar-footer{margin-top:auto;padding-top:12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;}
+.gs-main{margin-left:0;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.gs-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:50;}
+body.light .gs-sidebar{background:#fff;border-color:#ddd8d0;}
+body.light .gs-topbar{background:#fff;border-color:#ddd8d0;}
+body.light .gs-nav-item:hover{background:rgba(0,0,0,0.04);}
+body.light .gs-nav-item.active{background:rgba(212,146,10,0.1);}
+body.light .gs-backdrop{background:rgba(0,0,0,0.3);}
+.btn-menu{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);transition:all 0.2s;flex-shrink:0;}
+.btn-menu:hover{border-color:var(--accent);color:var(--accent);}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-<body>
+<body class="sidebar-open">
 
-<!-- HEADER -->
-<header class="gs-header">
-  <div class="gs-header-top">
-    <div class="gs-logo">
-      <div class="gs-logo-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" style="width:17px;height:17px;stroke-width:2.2;color:#0d1117" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-      </div>
-      <div>
-        <div class="gs-logo-name">Dashboard</div>
-        <div class="gs-logo-sub" id="current_datetime">—</div>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
-      <span id="fb_badge" class="fb-badge off"><span class="fb-dot"></span>Firebase</span>
-      <button class="btn btn-ghost" onclick="reloadData()" style="padding:6px 10px;">
-        <svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-      </button>
-      <button class="theme-toggle" onclick="toggleTheme()" id="theme_btn">
-        <span id="theme_icon"><svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></span>
-      </button>
-    </div>
+<div class="gs-layout">
+<aside class="gs-sidebar">
+  <div class="gs-sidebar-top">
+    <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;stroke-width:2.2;color:#0d1117" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></div>
+    <div><div class="gs-logo-name">ปั๊มน้ำมัน</div><div class="gs-logo-sub">Gas Station Manager</div></div>
   </div>
+  <div class="gs-sidebar-divider"></div>
   <nav class="gs-nav">
-    <span class="gs-nav-item active"><svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg><span class="nav-text">Dashboard</span></span>
-    <a href="index.html" class="gs-nav-item"><svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M8.5 20v-6l1.5-2 1.5 2v6"/><path d="m14 11-2 2-2-2"/><line x1="12" x2="12" y1="13" y2="20"/></svg><span class="nav-text">บันทึกวัน</span></a>
-    <a href="report.html" class="gs-nav-item"><svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg><span class="nav-text">รายงาน</span></a>
+    <span class="gs-nav-item active"><svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>Dashboard</span>
+    <a href="index.html" class="gs-nav-item"><svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M8.5 20v-6l1.5-2 1.5 2v6"/><path d="m14 11-2 2-2-2"/><line x1="12" x2="12" y1="13" y2="20"/></svg>บันทึกวัน</a>
+    <a href="report.html" class="gs-nav-item"><svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>รายงาน</a>
   </nav>
-</header>
+  <div class="gs-sidebar-footer">
+    <span id="fb_badge" class="fb-badge off"><span class="fb-dot"></span>Firebase</span>
+    <button class="theme-toggle" onclick="toggleTheme()" id="theme_btn"><span id="theme_icon"><svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></span></button>
+  </div>
+</aside>
+<div class="gs-backdrop" onclick="toggleSidebar()"></div>
+<div class="gs-main">
+<div class="gs-topbar">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button class="btn-menu" onclick="toggleSidebar()" title="เมนู"><svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button>
+    <span style="font-size:13px;font-weight:700;">Dashboard</span>
+    <span class="gs-logo-sub" id="current_datetime" style="font-size:11px;"></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:7px;">
+    <span id="last_update_label_top" style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;"></span>
+    <button class="btn btn-ghost" onclick="reloadData()" style="padding:6px 10px;"><svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button>
+  </div>
+</div>
 
 <main>
   <div id="loading"><div class="spinner"></div>กำลังโหลดข้อมูล...</div>
@@ -267,21 +277,19 @@ body.light .chart-card{background:#fff;}
     </div>
 
     <!-- CHART -->
-    <div class="chart-card">
-      <div class="chart-card-header">
-        <div class="chart-card-title">
-          <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;stroke-width:2;color:var(--accent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-          ยอดขายรายวัน (฿)
+    <div id="chart_section" style="display:none;margin-bottom:24px;">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+          <div class="card-title" style="margin-bottom:0;"><svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg> ยอดขายรายวัน</div>
+          <div style="display:flex;gap:5px;">
+            <button class="chart-tab active" id="btn_chart_line" onclick="switchChart('line')">เส้น</button>
+            <button class="chart-tab" id="btn_chart_bar" onclick="switchChart('bar')">แท่ง</button>
+          </div>
         </div>
-        <div class="chart-tabs">
-          <button class="chart-tab active" id="ctab_line" onclick="switchChart('line')">เส้น</button>
-          <button class="chart-tab" id="ctab_bar" onclick="switchChart('bar')">แท่ง</button>
-        </div>
-      </div>
-      <div style="position:relative;height:240px;">
-        <canvas id="mini_chart"></canvas>
+        <div style="position:relative;height:220px;"><canvas id="dash_chart"></canvas></div>
       </div>
     </div>
+
     <!-- RECENT RECORDS TABLE -->
     <div class="section-label">
       <svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;stroke-width:2;display:inline;vertical-align:-1px;margin-right:4px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -306,6 +314,8 @@ body.light .chart-card{background:#fff;}
 
   </div><!-- /dash_content -->
 </main>
+</div><!-- /gs-main -->
+</div><!-- /gs-layout -->
 
 <script>
 const MONTHS_TH=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -313,6 +323,7 @@ var sheetData={};
 var _period='today';
 var _chartType='line';
 var _miniChart=null;
+var _lastChartData=null;
 
 function fmt(n,dec=0){if(n===null||n===undefined||isNaN(n))return'—';return n.toLocaleString('th-TH',{minimumFractionDigits:dec,maximumFractionDigits:dec});}
 function fmt2(n){return fmt(n,2);}
@@ -371,93 +382,13 @@ function setPeriod(p){
   renderDash();
 }
 
-// ── CHART ──
-
-function switchChart(t){
-  _chartType=t;
-  document.getElementById('ctab_line').classList.toggle('active',t==='line');
-  document.getElementById('ctab_bar').classList.toggle('active',t==='bar');
-  renderChart();
-}
-
-function getChartTheme(){
-  const isLight=document.body.classList.contains('light');
-  return{
-    grid:isLight?'rgba(0,0,0,0.07)':'rgba(255,255,255,0.06)',
-    tick:isLight?'#6b7280':'#8b949e',
-    tooltipBg:isLight?'#fff':'#1c2330',
-    tooltipBorder:isLight?'#ddd8d0':'#2d3547',
-    tooltipText:isLight?'#1a1a1a':'#e6edf3',
-  };
-}
-
-function renderChart(){
-  const keys=getPeriodKeys();
-  const all=getSortedKeys();
-  let chartKeys=keys;
-  if(_period==='today'&&keys.length===0){
-    chartKeys=all.slice(-14);
-  }
-  const dayMap={};
-  chartKeys.forEach(k=>{
-    const p=parseKey(k);const dk=`${p.day}-${p.month}-${p.year2}`;
-    if(!dayMap[dk])dayMap[dk]={g95:0,g91:0,d:0,label:''};
-    const c=computeDay(sheetData[k]);
-    dayMap[dk].g95+=c.g95_sale;dayMap[dk].g91+=c.g91_sale;dayMap[dk].d+=c.d_sale;
-    dayMap[dk].label=`${p.day} ${MONTHS_TH[p.month]}`;
-  });
-  if(Object.keys(dayMap).length===0&&all.length>0){
-    all.slice(-7).forEach(k=>{
-      const p=parseKey(k);const dk=`${p.day}-${p.month}-${p.year2}`;
-      if(!dayMap[dk])dayMap[dk]={g95:0,g91:0,d:0,label:''};
-      const c=computeDay(sheetData[k]);
-      dayMap[dk].g95+=c.g95_sale;dayMap[dk].g91+=c.g91_sale;dayMap[dk].d+=c.d_sale;
-      dayMap[dk].label=`${p.day} ${MONTHS_TH[p.month]}`;
-    });
-  }
-  const days=Object.keys(dayMap);
-  const labels=days.map(d=>dayMap[d].label);
-  const g95d=days.map(d=>dayMap[d].g95);
-  const g91d=days.map(d=>dayMap[d].g91);
-  const dd=days.map(d=>dayMap[d].d);
-  const th=getChartTheme();
-  const t=_chartType;
-  const lineProps={tension:0.35,pointRadius:3,pointHoverRadius:6,borderWidth:2,fill:false};
-  const barProps={borderRadius:4,borderSkipped:false};
-  if(_miniChart){_miniChart.destroy();_miniChart=null;}
-  const ctx=document.getElementById('mini_chart').getContext('2d');
-  _miniChart=new Chart(ctx,{
-    type:t,
-    data:{labels,datasets:[
-      {label:'G95',data:g95d,...(t==='line'?lineProps:barProps),borderColor:'#f85149',backgroundColor:t==='line'?'rgba(248,81,73,0.1)':'rgba(248,81,73,0.8)'},
-      {label:'G91',data:g91d,...(t==='line'?lineProps:barProps),borderColor:'#3fb950',backgroundColor:t==='line'?'rgba(63,185,80,0.1)':'rgba(63,185,80,0.8)'},
-      {label:'Diesel',data:dd,...(t==='line'?lineProps:barProps),borderColor:'#58a6ff',backgroundColor:t==='line'?'rgba(88,166,255,0.1)':'rgba(88,166,255,0.8)'},
-    ]},
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      interaction:{mode:'index',intersect:false},
-      plugins:{
-        legend:{display:false},
-        tooltip:{backgroundColor:th.tooltipBg,borderColor:th.tooltipBorder,borderWidth:1,titleColor:th.tooltipText,bodyColor:th.tooltipText,padding:10,
-          callbacks:{label:ctx=>{const v=ctx.raw;if(!v)return null;return ` ${ctx.dataset.label}: ฿${v.toLocaleString('th-TH',{minimumFractionDigits:0})}`;}}}
-      },
-      scales:{
-        x:{grid:{color:th.grid},ticks:{color:th.tick,font:{size:10},maxRotation:40}},
-        y:{grid:{color:th.grid},ticks:{color:th.tick,font:{size:10},callback:v=>v>=1000?'฿'+(v/1000).toFixed(0)+'k':'฿'+v}}
-      }
-    }
-  });
-}
-
-
-
 
 function renderDash(){
   const keys=getPeriodKeys();
   const all=getSortedKeys();
   // Compute aggregates for period
-  let tG95s=0,tG91s=0,tDs=0,tFull=0,tLiter=0,tSend=0,tDiff=0,tCash=0;
-  keys.forEach(k=>{const c=computeDay(sheetData[k]);tG95s+=c.g95_sale;tG91s+=c.g91_sale;tDs+=c.d_sale;tFull+=c.totalFuelFull;tLiter+=c.totalLiter;tSend+=c.mustSend;tDiff+=c.diff;tCash+=c.cashTotal;});
+  let tG95s=0,tG91s=0,tDs=0,tFull=0,tLiter=0,tSend=0,tDiff=0,tCash=0,tG95l=0,tG91l=0,tDl=0;
+  keys.forEach(k=>{const c=computeDay(sheetData[k]);tG95s+=c.g95_sale;tG91s+=c.g91_sale;tDs+=c.d_sale;tFull+=c.totalFuelFull;tLiter+=c.totalLiter;tSend+=c.mustSend;tDiff+=c.diff;tCash+=c.cashTotal;tG95l+=c.g95_l;tG91l+=c.g91_l;tDl+=c.d_l;});
   const uniqueDays=new Set(keys.map(k=>{const p=parseKey(k);return`${p.day}-${p.month}-${p.year2}`;})).size;
 
   // Hero
@@ -476,14 +407,26 @@ function renderDash(){
   document.getElementById('sg_g91').textContent='฿'+fmt(tG91s);
   document.getElementById('sg_d').textContent='฿'+fmt(tDs);
   document.getElementById('sg_cash').textContent='฿'+fmt(tCash);
+  document.getElementById('sg_g95_l').textContent=fmt2(tG95l)+' ลิตร';
+  document.getElementById('sg_g91_l').textContent=fmt2(tG91l)+' ลิตร';
+  document.getElementById('sg_d_l').textContent=fmt2(tDl)+' ลิตร';
+  // Build chart data (group shifts by day)
+  const MONTHS_SHORT=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const dayMap={};
+  keys.forEach(k=>{
+    const p=parseKey(k);const dk=`${p.day}-${p.month}-${p.year2}`;
+    if(!dayMap[dk]){dayMap[dk]={g95:0,g91:0,diesel:0,label:`${p.day} ${MONTHS_SHORT[p.month]}`};}
+    const c=computeDay(sheetData[k]);
+    dayMap[dk].g95+=c.g95_sale;dayMap[dk].g91+=c.g91_sale;dayMap[dk].diesel+=c.d_sale;
+  });
+  const dayKeys=Object.keys(dayMap);
+  _lastChartData=dayKeys.length>0?{labels:dayKeys.map(d=>dayMap[d].label),g95:dayKeys.map(d=>dayMap[d].g95),g91:dayKeys.map(d=>dayMap[d].g91),diesel:dayKeys.map(d=>dayMap[d].diesel)}:null;
+  renderChart();
 
   // Period label
   const t=getTodayBE(),m=getMonthBE();
   const pLabel=_period==='today'?`วันที่ ${t.day} ${MONTHS_TH[t.month]} 25${String(t.year2).padStart(2,'0')}`:`${MONTHS_TH[m.month]} 25${String(m.year2).padStart(2,'0')}`;
   document.getElementById('last_update_label').textContent=`${pLabel} · โหลดล่าสุด ${new Date().toLocaleTimeString('th-TH')}`;
-
-  // Chart
-  renderChart();
 
   // Recent table — last 8 records
   const recent=all.slice(-8).reverse();
@@ -500,6 +443,53 @@ function renderDash(){
 
   }
 
+// Chart
+function switchChart(type){
+  _chartType=type;
+  document.getElementById('btn_chart_line').classList.toggle('active',type==='line');
+  document.getElementById('btn_chart_bar').classList.toggle('active',type==='bar');
+  renderChart();
+}
+function renderChart(){
+  const section=document.getElementById('chart_section');
+  if(!_lastChartData||_lastChartData.labels.length===0){if(section)section.style.display='none';return;}
+  if(section)section.style.display='block';
+  const isLight=document.body.classList.contains('light');
+  const gridColor=isLight?'rgba(0,0,0,0.07)':'rgba(255,255,255,0.06)';
+  const tickColor=isLight?'#6b7280':'#8b949e';
+  const tooltipBg=isLight?'#fff':'#1c2330';
+  const tooltipBorder=isLight?'#ddd8d0':'#2d3547';
+  const tooltipText=isLight?'#1a1a1a':'#e6edf3';
+  if(_miniChart){_miniChart.destroy();_miniChart=null;}
+  const ctx=document.getElementById('dash_chart').getContext('2d');
+  const t=_chartType;
+  const commonLine={tension:0.35,pointRadius:3,pointHoverRadius:6,borderWidth:2,fill:false};
+  const commonBar={borderRadius:4,borderSkipped:false};
+  _miniChart=new Chart(ctx,{
+    type:t,
+    data:{
+      labels:_lastChartData.labels,
+      datasets:[
+        {label:'G95',data:_lastChartData.g95,...(t==='line'?commonLine:commonBar),borderColor:'#f85149',backgroundColor:t==='line'?'rgba(248,81,73,0.15)':'rgba(248,81,73,0.75)'},
+        {label:'G91',data:_lastChartData.g91,...(t==='line'?commonLine:commonBar),borderColor:'#3fb950',backgroundColor:t==='line'?'rgba(63,185,80,0.15)':'rgba(63,185,80,0.75)'},
+        {label:'Diesel',data:_lastChartData.diesel,...(t==='line'?commonLine:commonBar),borderColor:'#58a6ff',backgroundColor:t==='line'?'rgba(88,166,255,0.15)':'rgba(88,166,255,0.75)'},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:true,position:'top',labels:{color:tickColor,font:{size:11},boxWidth:12,padding:10}},
+        tooltip:{backgroundColor:tooltipBg,borderColor:tooltipBorder,borderWidth:1,titleColor:tooltipText,bodyColor:tooltipText,padding:10,callbacks:{label:ctx=>{const v=ctx.raw;if(!v)return null;return` ${ctx.dataset.label}: ฿${v.toLocaleString('th-TH',{minimumFractionDigits:0,maximumFractionDigits:0})}`;}}}
+      },
+      scales:{
+        x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:10},maxRotation:45}},
+        y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:10},callback:v=>v>=1000?'฿'+(v/1000).toFixed(1)+'k':'฿'+v}}
+      }
+    }
+  });
+}
+
 // Clock
 function updateClock(){
   const now=new Date();
@@ -508,6 +498,9 @@ function updateClock(){
   document.getElementById('current_datetime').textContent=t;
 }
 setInterval(updateClock,1000);updateClock();
+
+// Sidebar
+function toggleSidebar(){document.body.classList.toggle('sidebar-open');}
 
 // Theme
 function toggleTheme(){

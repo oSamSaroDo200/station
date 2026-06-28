@@ -105,10 +105,8 @@ select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(2
 @media(max-width:820px){
   .stat-strip{grid-template-columns:repeat(2,1fr);}
   .grid-2,.grid-4{grid-template-columns:1fr;}
-  .gs-header{padding:0 14px;}
   main{padding:14px 12px;}
   .fuel-fields{flex-direction:column;}
-  .gs-nav-item .nav-text{display:none;}
 }
 
 /* ── LIGHT MODE ── */
@@ -135,7 +133,28 @@ body.light .balance-total-row{border-color:#d4920a;}
 /* theme toggle button */
 .theme-toggle{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);transition:all 0.2s;flex-shrink:0;}
 .theme-toggle:hover{border-color:var(--accent);color:var(--accent);}
-
+/* ── SIDEBAR LAYOUT ── */
+.gs-layout{display:flex;min-height:100vh;}
+.gs-sidebar{width:216px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;padding:14px 10px;z-index:200;transform:translateX(-216px);transition:transform 0.25s cubic-bezier(0.4,0,0.2,1);box-shadow:4px 0 24px rgba(0,0,0,0.25);}
+body.sidebar-open .gs-sidebar{transform:translateX(0);}
+.gs-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:199;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
+body.sidebar-open .gs-backdrop{display:block;}
+.gs-sidebar-top{display:flex;align-items:center;gap:9px;padding:4px 8px;margin-bottom:4px;}
+.gs-sidebar-divider{height:1px;background:var(--border);margin:10px 0;}
+.gs-nav{display:flex;flex-direction:column;gap:2px;flex:1;}
+.gs-nav-item{padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:9px;transition:all 0.15s;border-bottom:none!important;white-space:nowrap;}
+.gs-nav-item:hover{background:rgba(255,255,255,0.05);color:var(--text);}
+.gs-nav-item.active{background:rgba(240,165,0,0.12);color:var(--accent);}
+.gs-sidebar-footer{margin-top:auto;padding-top:12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;}
+.gs-main{margin-left:0;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.gs-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:50;}
+body.light .gs-sidebar{background:#fff;border-color:#ddd8d0;}
+body.light .gs-topbar{background:#fff;border-color:#ddd8d0;}
+body.light .gs-nav-item:hover{background:rgba(0,0,0,0.04);}
+body.light .gs-nav-item.active{background:rgba(212,146,10,0.1);}
+body.light .gs-backdrop{background:rgba(0,0,0,0.3);}
+.btn-menu{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);transition:all 0.2s;flex-shrink:0;}
+.btn-menu:hover{border-color:var(--accent);color:var(--accent);}
 </style>
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -199,6 +218,7 @@ async function initFirebase(){
   try{
     const app=initializeApp(FIREBASE_CONFIG,'gas-rt');
     _db=getFirestore(app);
+    window._db=_db;
     // โหลดข้อมูลครั้งแรก
     const snap=await getDoc(doc(_db,'gas_station','daily_records'));
     if(snap.exists()){
@@ -237,7 +257,7 @@ async function initFirebase(){
       const el=document.getElementById('autosave_label');
       if(el){el.textContent='↻ จากเครื่องอื่น '+new Date().toLocaleTimeString('th-TH');el.style.color='var(--blue)';}
     });
-    setBadge(true);
+    window._fbReady=true;setBadge(true);
   }catch(e){
     setBadge(false);
     setStatus('❌ '+e.message,'err');
@@ -288,38 +308,60 @@ window.toggleAutoSave=function(){
   if(el2){el2.textContent=_autoSaveEnabled?'auto':'หยุด';el2.style.color=_autoSaveEnabled?'var(--green)':'var(--muted)';}
 };
 
+window.fbInit=function(configStr){
+  window.fbRestart();
+};
+window.fbStartSync=async function(){
+  if(!_db){setStatus('ยังไม่เชื่อมต่อ','err');return;}
+  try{
+    setStatus('กำลังโหลด...','syncing');
+    const snap=await getDoc(doc(_db,'gas_station','daily_records'));
+    if(snap.exists()){
+      const loaded=snap.data().records||{};
+      Object.keys(sheetData).forEach(k=>delete sheetData[k]);
+      Object.assign(sheetData,loaded);
+      if(typeof renderAllGroups==='function')renderAllGroups();
+      const keys=Object.keys(loaded).sort((a,b)=>{const pa=parseKey(a),pb=parseKey(b);if(pa.year2!==pb.year2)return pa.year2-pb.year2;if(pa.month!==pb.month)return pa.month-pb.month;if(pa.day!==pb.day)return pa.day-pb.day;const so={'m':0,'e':1,'':0};return(so[pa.shift]||0)-(so[pb.shift]||0);});
+      if(keys.length>0&&typeof loadDate==='function')loadDate(keys[keys.length-1]);
+      setStatus('โหลดจาก Cloud แล้ว · '+keys.length+' records','ok');
+    }else{setStatus('Firestore ว่าง','ok');}
+  }catch(e){setStatus('❌ '+e.message,'err');}
+};
 window._fbDoc=doc;window._fbSetDoc=setDoc;
 window.addEventListener('load',()=>setTimeout(initFirebase,300));
 </script>
 </head>
-<body>
+<body class="sidebar-open">
 <div id="sheetdata-store" hidden>{}</div>
 
-<!-- HEADER -->
-<header class="gs-header">
-  <div class="gs-header-top">
-    <div class="gs-logo">
-      <div class="gs-logo-icon" style="background:var(--accent);"><svg xmlns="http://www.w3.org/2000/svg" style="width:17px;height:17px;stroke-width:2;color:#0d1117" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V8l9-6 9 6v14"/><path d="M5 22V12h14v10"/><path d="M9 22v-4h6v4"/><path d="M21 8v4a2 2 0 0 1-2 2h-1"/><path d="M19 2l2 2-2 2"/></svg></div>
-      <div>
-        <div class="gs-logo-name">ปั๊มน้ำมัน</div>
-        <div class="gs-logo-sub">Gas Station Manager</div>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
-      <div id="header-date" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);background:var(--surface2);padding:5px 12px;border-radius:20px;border:1px solid var(--border);">—</div>
-      <div id="shift_badge" class="shift-badge"></div>
-      <span id="fb_header_badge" class="fb-badge off" style="cursor:pointer;" onclick="document.getElementById('fbModal').style.display='flex'"><span class="fb-dot"></span><span id="fb_badge_text">ออฟไลน์</span></span>
-      <span id="autosave_label" style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-      <button class="btn btn-save" onclick="saveDate()" style="padding:6px 13px;"><svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;stroke-width:2.2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> บันทึก</button>
-    </div>
-      <button class="theme-toggle" id="theme_btn" onclick="toggleTheme()" title="สลับธีม"><span id="theme_icon"><svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></span></button>
-    </div>
+<div class="gs-layout">
+<aside class="gs-sidebar">
+  <div class="gs-sidebar-top">
+    <div style="width:30px;height:30px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;stroke-width:2;color:#0d1117" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V8l9-6 9 6v14"/><path d="M5 22V12h14v10"/><path d="M9 22v-4h6v4"/><path d="M21 8v4a2 2 0 0 1-2 2h-1"/><path d="M19 2l2 2-2 2"/></svg></div>
+    <div><div class="gs-logo-name">ปั๊มน้ำมัน</div><div class="gs-logo-sub">Gas Station Manager</div></div>
+  </div>
+  <div class="gs-sidebar-divider"></div>
   <nav class="gs-nav">
-    <a href="dashboard.html" class="gs-nav-item"><svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg><span class="nav-text">Dashboard</span></a>
-    <span class="gs-nav-item active"><svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M8.5 20v-6l1.5-2 1.5 2v6"/><path d="m14 11-2 2-2-2"/><line x1="12" x2="12" y1="13" y2="20"/></svg><span class="nav-text">บันทึกวัน</span></span>
-    <a href="report.html" class="gs-nav-item"><svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg><span class="nav-text">รายงาน</span></a>
+    <a href="dashboard.html" class="gs-nav-item"><svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>Dashboard</a>
+    <span class="gs-nav-item active"><svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M8.5 20v-6l1.5-2 1.5 2v6"/><path d="m14 11-2 2-2-2"/><line x1="12" x2="12" y1="13" y2="20"/></svg>บันทึกวัน</span>
+    <a href="report.html" class="gs-nav-item"><svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>รายงาน</a>
   </nav>
-</header>
+  <div class="gs-sidebar-footer">
+    <span id="fb_header_badge" class="fb-badge off" style="cursor:pointer;" onclick="document.getElementById('fbModal').style.display='flex'"><span class="fb-dot"></span><span id="fb_badge_text">ออฟไลน์</span></span>
+    <span id="autosave_label" style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+    <button class="theme-toggle" id="theme_btn" onclick="toggleTheme()" title="สลับธีม"><span id="theme_icon"><svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></span></button>
+  </div>
+</aside>
+<div class="gs-backdrop" onclick="toggleSidebar()"></div>
+<div class="gs-main">
+<div class="gs-topbar">
+  <div style="display:flex;align-items:center;gap:9px;">
+    <button class="btn-menu" onclick="toggleSidebar()" title="เมนู"><svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button>
+    <div id="header-date" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);background:var(--surface2);padding:5px 12px;border-radius:20px;border:1px solid var(--border);">—</div>
+    <div id="shift_badge" class="shift-badge"></div>
+  </div>
+  <button class="btn btn-save" onclick="saveDate()"><svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;stroke-width:2.2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> บันทึก</button>
+</div>
 
 <!-- FIREBASE MODAL -->
 <div id="fbModal" class="gs-modal-backdrop" onclick="if(event.target===this)this.style.display='none'">
@@ -608,13 +650,15 @@ window.addEventListener('load',()=>setTimeout(initFirebase,300));
     </div>
   </div>
 </main>
+</div>
+</div>
 
 <script>
 const _raw=document.getElementById('sheetdata-store').textContent.trim();
 const sheetData=(_raw&&_raw!=='{}')?JSON.parse(_raw):{"26-5-69":{g95n_open:6823.22,g95n_close:6938.41,g95l_open:3391.36,g95l_close:3472.16,g91n_open:0,g91n_close:0,g91l_open:0,g91l_close:0,dn_open:15973.99,dn_close:16346.04,dl_open:12149.06,dl_close:12449.01,g95_price:45.86,g91_price:45.35,d_price:41.69,air_liter:0,change:3700,disc:0.5},"28-5-69":{g95n_open:7181.4,g95n_close:7310.12,g95l_open:3610.36,g95l_close:3698.08,g91n_open:0,g91n_close:0,g91l_open:0,g91l_close:0,dn_open:16722.75,dn_close:17073.7,dl_open:12983.35,dl_close:13211.35,g95_price:45.86,g91_price:45.35,d_price:41.69,air_liter:100.12,change:3700,disc:0.5},"30-5-69":{g95n_open:7548.12,g95n_close:7650.03,g95l_open:3806.29,g95l_close:3858.55,g91n_open:0,g91n_close:0,g91l_open:0,g91l_close:0,dn_open:17793.97,dn_close:17916.23,dl_open:13827.35,dl_close:13927.45,g95_price:45.86,g91_price:45.35,d_price:40.99,air_liter:140.55,change:3700,disc:0.5},"31-5-69":{g95n_open:7685.26,g95n_close:7793.11,g95l_open:3861.39,g95l_close:3952.84,g91n_open:0,g91n_close:0,g91l_open:0,g91l_close:0,dn_open:17962.59,dn_close:18432.02,dl_open:13961.61,dl_close:14178.77,g95_price:45.86,g91_price:40.99,d_price:40.99,air_liter:0,change:3700,disc:0.5},"1-6-69":{g95n_open:7834.07,g95n_close:7933.16,g95l_open:3956.99,g95l_close:4023.77,g91n_open:0,g91n_close:0,g91l_open:0,g91l_close:0,dn_open:18485.8,dn_close:18974.79,dl_open:14315.52,dl_close:14705.68,g95_price:45.86,g91_price:45.39,d_price:40.95,air_liter:150,change:3700,disc:0.5},"3-6-69":{g95n_open:8188.9,g95n_close:8310.17,g95l_open:4161.28,g95l_close:4216.26,g91n_open:0,g91n_close:0,g91l_open:0,g91l_close:0,dn_open:19694.57,dn_close:20194.9,dl_open:15149.05,dl_close:15458.09,g95_price:45.86,g91_price:45.39,d_price:40.95,air_liter:105,change:3700,disc:0.5},"5-6-69":{g95n_open:8473.72,g95n_close:8573.68,g95l_open:4318.12,g95l_close:4400.77,g91n_open:0,g91n_close:0,g91l_open:0,g91l_close:0,dn_open:20563.23,dn_close:21071.85,dl_open:15869.88,dl_close:16231.3,g95_price:46.95,g91_price:45.35,d_price:41.98,air_liter:150,change:3700,disc:0.5}};
 
 let transferRows=[{label:"พักยอด",amount:0}];let transferCount=1;
-const DENOMS=[{label:"1,000",value:1000},{label:"500",value:500},{label:"100",value:100},{label:"50",value:50},{label:"20",value:20},{label:"เหรียญ",value:1}];
+const DENOMS=[{label:"1,000",value:1000},{label:"500",value:500},{label:"100",value:100},{label:"50",value:50},{label:"20",value:20},{label:"10",value:10},{label:"5",value:5},{label:"2",value:2},{label:"1",value:1}];
 const MONTHS_TH=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
 function parseKey(k){const p=k.split('-');return{day:parseInt(p[0]),month:parseInt(p[1]),year2:parseInt(p[2]),shift:p[3]||''};}
@@ -811,7 +855,7 @@ function loadDate(dateKey){
   const sb=document.getElementById('shift_badge');
   if(sb){if(_pk.shift==='m'){sb.style.display='block';sb.style.borderColor='var(--accent)';sb.style.color='var(--accent)';sb.style.background='rgba(240,165,0,0.1)';sb.textContent='☀️ กะเช้า';}else if(_pk.shift==='e'){sb.style.display='block';sb.style.borderColor='var(--blue)';sb.style.color='var(--blue)';sb.style.background='rgba(88,166,255,0.1)';sb.textContent='🌙 กะเย็น';}else{sb.style.display='none';}}
   const d=sheetData[dateKey];
-  const allFields=['g95n_open','g95n_close','g95l_open','g95l_close','g91n_open','g91n_close','g91l_open','g91l_close','dn_open','dn_close','dl_open','dl_close','d4n_open','d4n_close','d4l_open','d4l_close','g95_price','g91_price','d_price','d4_price','air_liter','air_price_custom','air_disc_custom','must_send_input'];
+  const allFields=['g95n_open','g95n_close','g95l_open','g95l_close','g91n_open','g91n_close','g91l_open','g91l_close','dn_open','dn_close','dl_open','dl_close','d4n_open','d4n_close','d4l_open','d4l_close','g95_price','g91_price','d_price','d4_price','air_liter','air_price_custom','air_disc_custom'];
   allFields.forEach(f=>{const el=document.getElementById(f);if(el){el.value='';el.setAttribute('value','');}});
   ['g95n_liter','g95l_liter','g91n_liter','g91l_liter','dn_liter','dl_liter','d4n_liter','d4l_liter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});
   allFields.forEach(f=>setNum(document.getElementById(f),d[f]));
@@ -833,7 +877,7 @@ function loadDate(dateKey){
 function collectEntry(){
   const activeTab=document.querySelector('.date-tab.active');if(!activeTab)return null;
   const dateKey=activeTab.dataset.date;
-  const fields=['g95n_open','g95n_close','g95l_open','g95l_close','g91n_open','g91n_close','g91l_open','g91l_close','dn_open','dn_close','dl_open','dl_close','d4n_open','d4n_close','d4l_open','d4l_close','g95_price','g91_price','d_price','d4_price','air_liter','air_price_custom','air_disc_custom','must_send_input'];
+  const fields=['g95n_open','g95n_close','g95l_open','g95l_close','g91n_open','g91n_close','g91l_open','g91l_close','dn_open','dn_close','dl_open','dl_close','d4n_open','d4n_close','d4l_open','d4l_close','g95_price','g91_price','d_price','d4_price','air_liter','air_price_custom','air_disc_custom'];
   function rn(el){if(!el)return'';const raw=String(el.value).trim().replace(',','.');if(raw!==''&&raw!=='0'&&!isNaN(parseFloat(raw)))return parseFloat(raw);const vn=el.valueAsNumber;if(!isNaN(vn))return vn;if(raw==='0')return 0;return'';}
   const entry={};fields.forEach(f=>{entry[f]=rn(document.getElementById(f));});
   const _chv=rn(document.getElementById('g_change'));entry.change=(_chv===''||_chv===null||_chv===undefined)?3700:_chv;
@@ -868,6 +912,9 @@ function clearAll(){
   document.getElementById('header-date').textContent='—';
   const sb=document.getElementById('shift_badge');if(sb)sb.style.display='none';
 }
+
+// ── SIDEBAR TOGGLE ──
+function toggleSidebar(){document.body.classList.toggle('sidebar-open');}
 
 // ── THEME TOGGLE ──
 function toggleTheme(){
