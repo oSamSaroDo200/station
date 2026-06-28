@@ -70,7 +70,7 @@ select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(2
 .hero-number{font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:700;color:var(--accent);}
 .cash-row{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);}
 .cash-row:last-child{border-bottom:none;}
-.cash-denom{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;width:54px;color:var(--accent);}
+.cash-denom{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;width:90px;color:var(--accent);}
 .cash-subtotal{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;width:86px;text-align:right;color:var(--text);}
 .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;}
 .badge-pos{background:rgba(63,185,80,0.15);color:var(--green);}
@@ -616,6 +616,20 @@ window.addEventListener('load',()=>setTimeout(initFirebase,300));
       </div>
     </div>
 
+    <!-- STORE DEDUCTIONS -->
+    <div class="section-label"><svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;stroke-width:2;display:inline;vertical-align:-1px;margin-right:5px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>หักของชำ / ค่าใช้จ่ายอื่น</div>
+    <div style="margin-bottom:18px;">
+      <div class="card">
+        <div class="card-title"><svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> รายการหัก (ของชำ / ค่าใช้จ่ายอื่น)</div>
+        <div id="store_inputs" style="display:flex;flex-direction:column;gap:7px;"></div>
+        <button class="btn btn-ghost" style="margin-top:10px;width:100%;font-size:12px;" onclick="addStore()"><svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;stroke-width:2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg> เพิ่มรายการ</button>
+        <div class="balance-total-row" style="margin-top:11px;padding-top:11px;border-top:1px solid var(--border);">
+          <span class="balance-total-key" style="font-size:13px;">รวมหัก</span>
+          <span class="balance-total-val" id="total_store" style="font-size:15px;color:var(--red);">0 ฿</span>
+        </div>
+      </div>
+    </div>
+
     <!-- FINAL BALANCE -->
     <div class="section-label"><svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;stroke-width:2;display:inline;vertical-align:-1px;margin-right:5px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>ยอดสรุปประจำวัน</div>
     <div class="grid-2">
@@ -627,6 +641,7 @@ window.addEventListener('load',()=>setTimeout(initFirebase,300));
           <div class="balance-row"><span class="balance-key">Diesel ตู้ 3+4</span><span class="balance-val" id="bal_d3">—</span><span id="bal_d" style="display:none">—</span></div>
           <div class="balance-row"><span class="balance-key">รวมน้ำมัน (เต็ม)</span><span class="balance-val" style="color:var(--blue)" id="bal_gross">—</span></div>
           <div class="balance-row"><span class="balance-key">หัก เงินทอน</span><span class="balance-val" style="color:var(--red)" id="bal_change">—</span></div>
+          <div class="balance-row" id="bal_store_row" style="display:none;"><span class="balance-key">หัก ของชำ/ค่าใช้จ่าย</span><span class="balance-val" style="color:var(--red)" id="bal_store">—</span></div>
           <div class="balance-total-row"><span class="balance-total-key">ยอดที่ส่ง</span><span class="balance-total-val" id="bal_net">—</span></div>
         </div>
       </div>
@@ -639,6 +654,7 @@ window.addEventListener('load',()=>setTimeout(initFirebase,300));
         <div style="background:var(--surface2);border-radius:9px;padding:13px 15px;">
           <div class="balance-row"><span class="balance-key">รวมยอดน้ำมัน</span><span class="balance-val" id="diff_net">—</span></div>
           <div class="balance-row"><span class="balance-key">ยอดที่ส่ง</span><span class="balance-val" id="diff_have">—</span></div>
+          <div class="balance-row" id="diff_store_row" style="display:none;"><span class="balance-key">หัก ของชำ/ค่าใช้จ่าย</span><span class="balance-val" style="color:var(--red)" id="diff_store_val">—</span></div>
           <div class="balance-total-row"><span class="balance-total-key">ผลต่าง</span><span id="diff_badge" style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;">—</span></div>
         </div>
       </div>
@@ -657,8 +673,8 @@ window.addEventListener('load',()=>setTimeout(initFirebase,300));
 const _raw=document.getElementById('sheetdata-store').textContent.trim();
 const sheetData=(_raw&&_raw!=='{}')?JSON.parse(_raw):{"26-5-69":{g95n_open:6823.22,g95n_close:6938.41,g95l_open:3391.36,g95l_close:3472.16,g91n_open:0,g91n_close:0,g91l_open:0,g91l_close:0,dn_open:15973.99,dn_close:16346.04,dl_open:12149.06,dl_close:12449.01,g95_price:45.86,g91_price:45.35,d_price:41.69,air_liter:0,change:3700,disc:0.5},"28-5-69":{g95n_open:7181.4,g95n_close:7310.12,g95l_open:3610.36,g95l_close:3698.08,g91n_open:0,g91n_close:0,g91l_open:0,g91l_close:0,dn_open:16722.75,dn_close:17073.7,dl_open:12983.35,dl_close:13211.35,g95_price:45.86,g91_price:45.35,d_price:41.69,air_liter:100.12,change:3700,disc:0.5},"30-5-69":{g95n_open:7548.12,g95n_close:7650.03,g95l_open:3806.29,g95l_close:3858.55,g91n_open:0,g91n_close:0,g91l_open:0,g91l_close:0,dn_open:17793.97,dn_close:17916.23,dl_open:13827.35,dl_close:13927.45,g95_price:45.86,g91_price:45.35,d_price:40.99,air_liter:140.55,change:3700,disc:0.5},"31-5-69":{g95n_open:7685.26,g95n_close:7793.11,g95l_open:3861.39,g95l_close:3952.84,g91n_open:0,g91n_close:0,g91l_open:0,g91l_close:0,dn_open:17962.59,dn_close:18432.02,dl_open:13961.61,dl_close:14178.77,g95_price:45.86,g91_price:40.99,d_price:40.99,air_liter:0,change:3700,disc:0.5},"1-6-69":{g95n_open:7834.07,g95n_close:7933.16,g95l_open:3956.99,g95l_close:4023.77,g91n_open:0,g91n_close:0,g91l_open:0,g91l_close:0,dn_open:18485.8,dn_close:18974.79,dl_open:14315.52,dl_close:14705.68,g95_price:45.86,g91_price:45.39,d_price:40.95,air_liter:150,change:3700,disc:0.5},"3-6-69":{g95n_open:8188.9,g95n_close:8310.17,g95l_open:4161.28,g95l_close:4216.26,g91n_open:0,g91n_close:0,g91l_open:0,g91l_close:0,dn_open:19694.57,dn_close:20194.9,dl_open:15149.05,dl_close:15458.09,g95_price:45.86,g91_price:45.39,d_price:40.95,air_liter:105,change:3700,disc:0.5},"5-6-69":{g95n_open:8473.72,g95n_close:8573.68,g95l_open:4318.12,g95l_close:4400.77,g91n_open:0,g91n_close:0,g91l_open:0,g91l_close:0,dn_open:20563.23,dn_close:21071.85,dl_open:15869.88,dl_close:16231.3,g95_price:46.95,g91_price:45.35,d_price:41.98,air_liter:150,change:3700,disc:0.5}};
 
-let transferRows=[{label:"พักยอด",amount:0}];let transferCount=1;
-const DENOMS=[{label:"1,000",value:1000},{label:"500",value:500},{label:"100",value:100},{label:"50",value:50},{label:"20",value:20},{label:"10",value:10},{label:"5",value:5},{label:"2",value:2},{label:"1",value:1}];
+let transferRows=[{label:"พักยอด",amount:0}];let transferCount=1;let storeRows=[{label:'ของชำ',amount:0}];let storeCount=1;
+const DENOMS=[{label:"1,000",value:1000},{label:"500",value:500},{label:"100",value:100},{label:"50",value:50},{label:"20",value:20}];
 const MONTHS_TH=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
 function parseKey(k){const p=k.split('-');return{day:parseInt(p[0]),month:parseInt(p[1]),year2:parseInt(p[2]),shift:p[3]||''};}
@@ -677,17 +693,30 @@ function renderTransfer(){
     cont.appendChild(div);
   });
 }
+function addStore(){storeCount++;storeRows.push({label:'รายการ '+storeCount,amount:0});renderStore();calc();}
+function renderStore(){
+  const cont=document.getElementById('store_inputs');if(!cont)return;cont.innerHTML='';
+  storeRows.forEach((r,i)=>{
+    const div=document.createElement('div');div.style.cssText='display:flex;gap:7px;align-items:center;';
+    div.innerHTML=`<input type="text" placeholder="ชื่อรายการ" value="${r.label}" style="flex:1" oninput="storeRows[${i}].label=this.value"><input type="number" placeholder="0" value="${r.amount||''}" style="width:110px;font-family:'IBM Plex Mono',monospace" oninput="storeRows[${i}].amount=parseFloat(this.value)||0;calc()"><button onclick="storeRows.splice(${i},1);renderStore();calc();" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;padding:0 4px;">✕</button>`;
+    cont.appendChild(div);
+  });
+}
 function renderCash(){
   const cont=document.getElementById('cash_counter');cont.innerHTML='';
   DENOMS.forEach(d=>{
     const row=document.createElement('div');row.className='cash-row';
-    row.innerHTML=`<span class="cash-denom">${d.label}</span><span style="color:var(--muted);font-size:11px;">×</span><input type="number" style="width:75px;font-family:'IBM Plex Mono',monospace;" min="0" step="${d.value===1?0.01:1}" placeholder="0" id="cash_${d.value}" oninput="calcCash()"><span style="color:var(--muted);font-size:11px;margin-left:auto;">=</span><span class="cash-subtotal" id="csub_${d.value}">0</span>`;
+    row.innerHTML=`<span class="cash-denom">${d.label}</span><span style="color:var(--muted);font-size:11px;">×</span><input type="number" style="width:75px;font-family:'IBM Plex Mono',monospace;" min="0" step="1" placeholder="0" id="cash_${d.value}" oninput="calcCash()"><span style="color:var(--muted);font-size:11px;margin-left:auto;">=</span><span class="cash-subtotal" id="csub_${d.value}">0</span>`;
     cont.appendChild(row);
   });
+  const coinsRow=document.createElement('div');coinsRow.className='cash-row';
+  coinsRow.innerHTML=`<span class="cash-denom">เหรียญ</span><span style="visibility:hidden;font-size:11px;">×</span><input type="number" style="width:75px;font-family:'IBM Plex Mono',monospace;" min="0" step="1" placeholder="0" id="cash_coins" oninput="calcCash()"><span style="color:var(--muted);font-size:11px;margin-left:auto;">=</span><span class="cash-subtotal" id="csub_coins">0</span>`;
+  cont.appendChild(coinsRow);
 }
 function calcCash(){
   let total=0;
   DENOMS.forEach(d=>{const qty=parseFloat(document.getElementById('cash_'+d.value)?.value)||0;const sub=qty*d.value;const el=document.getElementById('csub_'+d.value);if(el)el.textContent=fmt(sub);total+=sub;});
+  const coins=parseFloat(document.getElementById('cash_coins')?.value)||0;const csubCoins=document.getElementById('csub_coins');if(csubCoins)csubCoins.textContent=fmt(coins);total+=coins;
   document.getElementById('total_cash').textContent=fmt(total)+' ฿';calc();
 }
 
@@ -724,7 +753,7 @@ function calc(){
   document.getElementById('sum_all_liter').textContent=fmt(all_l,2)+' ลิตร';
   const totalTransfer=transferRows.reduce((s,r)=>s+(r.amount||0),0);
   document.getElementById('total_transfer').textContent=fmt(totalTransfer)+' ฿';
-  let totalCash=0;DENOMS.forEach(d=>{const qty=parseFloat(document.getElementById('cash_'+d.value)?.value)||0;totalCash+=qty*d.value;});
+  let totalCash=0;DENOMS.forEach(d=>{const qty=parseFloat(document.getElementById('cash_'+d.value)?.value)||0;totalCash+=qty*d.value;});totalCash+=parseFloat(document.getElementById('cash_coins')?.value)||0;
   const cashTotal=totalCash+totalTransfer;
   document.getElementById('final_cash_total').textContent=fmt(cashTotal);
   const mustSend=cashTotal-change;
@@ -737,10 +766,18 @@ function calc(){
   document.getElementById('bal_net').textContent=fmt(mustSend)+' ฿';
   document.getElementById('diff_net').textContent=fmt(totalFuelFull)+' ฿';
   document.getElementById('diff_have').textContent=fmt(mustSend)+' ฿';
-  const diff=mustSend-totalFuelFull;const diffEl=document.getElementById('diff_badge');
-  if(Math.abs(diff)<0.01){diffEl.textContent='✓ ยอดตรง';diffEl.style.color='var(--green)';}
-  else if(diff>=0){diffEl.innerHTML=`<span style="color:var(--green)">+${fmt(diff)} ฿ (เกิน)</span>`;}
-  else{diffEl.innerHTML=`<span style="color:var(--red)">${fmt(Math.abs(diff))} ฿ (ขาด)</span>`;}
+  const storeTotal=storeRows.reduce((s,r)=>s+(r.amount||0),0);
+  const storeEl=document.getElementById('total_store');if(storeEl)storeEl.textContent=fmt(storeTotal)+' ฿';
+  const diff=mustSend-totalFuelFull;
+  const netDiff=diff-storeTotal;
+  const balStoreRow=document.getElementById('bal_store_row');if(balStoreRow)balStoreRow.style.display=storeTotal>0?'flex':'none';
+  const balStore=document.getElementById('bal_store');if(balStore)balStore.textContent=storeTotal>0?'-'+fmt(storeTotal)+' ฿':'—';
+  const diffStoreRow=document.getElementById('diff_store_row');if(diffStoreRow)diffStoreRow.style.display=storeTotal>0?'flex':'none';
+  const diffStoreVal=document.getElementById('diff_store_val');if(diffStoreVal)diffStoreVal.textContent=storeTotal>0?'-'+fmt(storeTotal)+' ฿':'—';
+  const diffEl=document.getElementById('diff_badge');
+  if(Math.abs(netDiff)<0.01){diffEl.textContent='✓ ยอดตรง';diffEl.style.color='var(--green)';}
+  else if(netDiff>=0){diffEl.innerHTML=`<span style="color:var(--green)">+${fmt(netDiff)} ฿ (เกิน)</span>`;}
+  else{diffEl.innerHTML=`<span style="color:var(--red)">${fmt(Math.abs(netDiff))} ฿ (ขาด)</span>`;}
   // stat strip
   document.getElementById('ss_g95').textContent=g95_total_l>0?fmt(g95_sale):'—';
   document.getElementById('ss_g95_l').textContent=fmt(g95_total_l,2)+' ลิตร';
@@ -749,9 +786,9 @@ function calc(){
   document.getElementById('ss_all').textContent=all_l>0?fmt(totalFuelFull):'—';
   document.getElementById('ss_all_l').textContent=fmt(all_l,2)+' ลิตร';
   const ssD=document.getElementById('ss_diff');const ssDS=document.getElementById('ss_diff_sub');
-  if(Math.abs(diff)<0.01){ssD.textContent='ตรง';ssD.style.color='var(--green)';ssDS.textContent='ยอดตรง';}
-  else if(diff>0){ssD.textContent='+'+fmt(diff);ssD.style.color='var(--green)';ssDS.textContent='เกิน';}
-  else{ssD.textContent='-'+fmt(Math.abs(diff));ssD.style.color='var(--red)';ssDS.textContent='ขาด';}
+  if(Math.abs(netDiff)<0.01){ssD.textContent='ตรง';ssD.style.color='var(--green)';ssDS.textContent='ยอดตรง';}
+  else if(netDiff>0){ssD.textContent='+'+fmt(netDiff);ssD.style.color='var(--green)';ssDS.textContent='เกิน';}
+  else{ssD.textContent='-'+fmt(Math.abs(netDiff));ssD.style.color='var(--red)';ssDS.textContent='ขาด';}
 }
 
 let _selectedShift='m';
@@ -868,10 +905,18 @@ function loadDate(dateKey){
     if(sub)sub.textContent=qty>0?fmt(qty*denom.value):'0';
   });
   let lc=0;DENOMS.forEach(d2=>{const qty=d.cash?(d.cash[String(d2.value)]??d.cash[d2.value]??0):0;lc+=qty*d2.value;});
+  const coinsEl=document.getElementById('cash_coins');const coinsSubEl=document.getElementById('csub_coins');
+  const coinsAmt=d.cash?(d.cash['coins']??0):0;
+  if(coinsEl){const s=coinsAmt>0?String(coinsAmt):'';try{const ns=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');if(ns&&ns.set)ns.set.call(coinsEl,s);else coinsEl.value=s;}catch(e){coinsEl.value=s;}coinsEl.setAttribute('value',s);}
+  if(coinsSubEl)coinsSubEl.textContent=coinsAmt>0?fmt(coinsAmt):'0';
+  lc+=coinsAmt;
   document.getElementById('total_cash').textContent=fmt(lc)+' ฿';
   if(d.transfer&&d.transfer.length>0){transferRows=d.transfer.map(r=>({label:r.label,amount:r.amount||0}));transferCount=transferRows.length;}
   else{transferRows=[{label:'พักยอด',amount:0}];transferCount=1;}
   renderTransfer();
+  if(d.store&&d.store.length>0){storeRows=d.store.map(r=>({label:r.label,amount:r.amount||0}));storeCount=storeRows.length;}
+  else{storeRows=[{label:'ของชำ',amount:0}];storeCount=1;}
+  renderStore();
   requestAnimationFrame(()=>requestAnimationFrame(()=>{setTimeout(()=>calc(),80);}));
 }
 function collectEntry(){
@@ -882,8 +927,8 @@ function collectEntry(){
   const entry={};fields.forEach(f=>{entry[f]=rn(document.getElementById(f));});
   const _chv=rn(document.getElementById('g_change'));entry.change=(_chv===''||_chv===null||_chv===undefined)?3700:_chv;
   entry.disc=rn(document.getElementById('g_discount_per_liter'))||0.5;
-  const cashData={};DENOMS.forEach(d=>{const vv=rn(document.getElementById('cash_'+d.value));cashData[String(d.value)]=(vv===''||vv===0)?0:vv;});
-  entry.cash=cashData;entry.transfer=transferRows.map(r=>({label:r.label,amount:r.amount||0}));
+  const cashData={};DENOMS.forEach(d=>{const vv=rn(document.getElementById('cash_'+d.value));cashData[String(d.value)]=(vv===''||vv===0)?0:vv;});const coinsV=rn(document.getElementById('cash_coins'));cashData['coins']=(coinsV===''||coinsV===0)?0:coinsV;
+  entry.cash=cashData;entry.transfer=transferRows.map(r=>({label:r.label,amount:r.amount||0}));entry.store=storeRows.map(r=>({label:r.label,amount:r.amount||0}));
   sheetData[dateKey]=entry;return dateKey;
 }
 function saveDate(silent=false){
@@ -907,7 +952,7 @@ function clearAll(){
   document.getElementById('g_change').value=3700;document.getElementById('g_discount_per_liter').value=0.5;
   DENOMS.forEach(d=>{const sub=document.getElementById('csub_'+d.value);if(sub)sub.textContent='0';});
   document.getElementById('total_cash').textContent='0 ฿';
-  transferRows=[{label:'พักยอด',amount:0}];transferCount=1;renderTransfer();calc();
+  transferRows=[{label:'พักยอด',amount:0}];transferCount=1;renderTransfer();storeRows=[{label:'ของชำ',amount:0}];storeCount=1;renderStore();calc();
   document.querySelectorAll('.date-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('header-date').textContent='—';
   const sb=document.getElementById('shift_badge');if(sb)sb.style.display='none';
@@ -934,7 +979,7 @@ function applyStoredTheme(){
   updateThemeIcon();
 }
 
-function init(){applyStoredTheme();renderAllGroups();renderTransfer();renderCash();calc();}
+function init(){applyStoredTheme();renderAllGroups();renderTransfer();renderStore();renderCash();calc();}
 init();
 </script>
 
