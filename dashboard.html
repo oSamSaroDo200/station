@@ -345,11 +345,13 @@ function computeDay(d){
   const change=d.change||3700;
   const cashTotal=computeCash(d)+computeTransfer(d);
   const mustSend=cashTotal-change;
-  const diff=mustSend-totalFuelFull;
-  return{g95_l,g95_sale,g91_l,g91_sale,d_l,d_sale,totalFuelFull,totalLiter,cashTotal,mustSend,diff,change};
+  const storeTotal=computeStore(d);
+  const diff=mustSend-totalFuelFull-storeTotal;
+  return{g95_l,g95_sale,g91_l,g91_sale,d_l,d_sale,totalFuelFull,totalLiter,cashTotal,mustSend,storeTotal,diff,change};
 }
 function computeCash(d){if(!d.cash)return 0;return[1000,500,100,50,20,10,5,2,1].reduce((s,v)=>s+(d.cash[String(v)]||0)*v,0);}
 function computeTransfer(d){if(!d.transfer)return 0;return d.transfer.reduce((s,r)=>s+(r.amount||0),0);}
+function computeStore(d){if(!d.store)return 0;return d.store.reduce((s,r)=>s+(r.amount||0),0);}
 
 function getSortedKeys(){
   return Object.keys(sheetData).sort((a,b)=>{

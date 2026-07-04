@@ -242,12 +242,14 @@ function computeDay(d){
   const d4n_l=Math.max(0,(d.d4n_close||0)-(d.d4n_open||0)),d4l_l=Math.max(0,(d.d4l_close||0)-(d.d4l_open||0));const d4_l=d4n_l+d4l_l;const d4p=d.d4_price||dp;const d4_sale=d4_l*d4p;
   const air_l=d.air_liter||0,air_p=d.air_price_custom||dp,_ad=d.air_disc_custom!==undefined&&d.air_disc_custom!==''&&d.air_disc_custom!==null?parseFloat(d.air_disc_custom)||0:disc;const air_net=air_l*(air_p-_ad);
   const totalFuelFull=g95_sale+g91_sale+d3_sale+d4_sale,totalLiter=g95_l+g91_l+d3_l+d4_l;
-  const cashTotal=computeCash(d)+computeTransfer(d);const mustSend=cashTotal-change;const diff=mustSend-totalFuelFull;
+  const cashTotal=computeCash(d)+computeTransfer(d);const mustSend=cashTotal-change;
+  const storeTotal=computeStore(d);const diff=mustSend-totalFuelFull-storeTotal;
   const in_g95=d.tank_in_g95||d.in_g95||0,in_g91=d.tank_in_g91||d.in_g91||0,in_d=d.tank_in_d||d.in_d||0;
-  return{g95_l,g95_sale,g91_l,g91_sale,d3_l,d3_sale,d4_l,d4_sale,air_l,air_net,totalFuelFull,totalLiter,cashTotal,mustSend,diff,change,disc,in_g95,in_g91,in_d};
+  return{g95_l,g95_sale,g91_l,g91_sale,d3_l,d3_sale,d4_l,d4_sale,air_l,air_net,totalFuelFull,totalLiter,cashTotal,mustSend,storeTotal,diff,change,disc,in_g95,in_g91,in_d};
 }
 function computeCash(d){if(!d.cash)return 0;const denoms=[1000,500,100,50,20,10,5,2,1];return denoms.reduce((s,v)=>{const qty=d.cash[String(v)]??d.cash[v]??0;return s+qty*v;},0);}
 function computeTransfer(d){if(!d.transfer)return 0;return d.transfer.reduce((s,r)=>s+(r.amount||0),0);}
+function computeStore(d){if(!d.store)return 0;return d.store.reduce((s,r)=>s+(r.amount||0),0);}
 function getFilteredKeys(){
   const month=document.getElementById('filter_month')?.value||'',from=document.getElementById('filter_from')?.value,to=document.getElementById('filter_to')?.value;
   return Object.keys(sheetData).filter(k=>{
@@ -277,7 +279,7 @@ function render(){
   html+=`<div class="stat-strip">
     <div class="stat-card ca"><div class="stat-label">รวมยอดน้ำมัน</div><div class="stat-value" style="color:var(--accent);">${fmt(totFull)}</div><div class="stat-sub">${fmt(totLiter)} ลิตร รวม</div></div>
     <div class="stat-card cb"><div class="stat-label">ยอดส่งรวม</div><div class="stat-value" style="color:var(--blue);">${fmt(totSend)}</div><div class="stat-sub">${uniqueDays} วัน · ${keys.length} กะ</div></div>
-    <div class="stat-card ${totDiff>=0?'cg':'cr'}"><div class="stat-label">ผลต่างรวม</div><div class="stat-value" style="color:${totDiff>=0?'var(--green)':'var(--red)'};">${fmt(Math.abs(totDiff))}</div><div class="stat-sub">${totDiff>=0?'▲ เกินรวม':'▼ ขาดรวม'}</div></div>
+    <div class="stat-card ${Math.abs(totDiff)<0.01?'':totDiff>=0?'cg':'cr'}"><div class="stat-label">ผลต่างรวม</div><div class="stat-value" style="color:${Math.abs(totDiff)<0.01?'var(--muted)':totDiff>=0?'var(--green)':'var(--red)'};">${fmt(Math.abs(totDiff))}</div><div class="stat-sub">${Math.abs(totDiff)<0.01?'✓ ยอดตรง':totDiff>=0?'▲ เกินรวม':'▼ ขาดรวม'}</div></div>
     <div class="stat-card"><div class="stat-label">ตรง / เกิน / ขาด</div><div style="display:flex;gap:5px;margin-top:5px;"><span class="badge-ok">${daysExact}</span><span class="badge-warn">${daysOver}</span><span class="badge-bad">${daysShort}</span></div><div class="stat-sub" style="margin-top:4px;">ตรง / เกิน / ขาด</div></div>
   </div>`;
   html+=`<div class="section-label"><svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;stroke-width:2;display:inline;vertical-align:-1px;margin-right:5px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>สรุปแยกตามประเภทน้ำมัน</div><div class="fuel-bar-grid">${[{label:'G95 · ตู้ 1',sale:totG95sale,liter:totG95l,color:'var(--red)'},{label:'G91 · ตู้ 2',sale:totG91sale,liter:totG91l,color:'var(--green)'},{label:'Diesel · ตู้ 3+4',sale:totD3sale+totD4sale,liter:totD3l+totD4l,color:'var(--blue)'}].map(f=>`<div class="fuel-bar-card"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${f.color};margin-bottom:7px;">${f.label}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;">${fmt(f.sale)} <span style="font-size:10px;color:var(--muted);">฿</span></div><div style="font-size:10px;color:var(--muted);margin-top:2px;">${fmt(f.liter)} ลิตร</div></div>`).join('')}</div>`;
