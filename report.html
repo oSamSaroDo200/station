@@ -247,7 +247,7 @@ function computeDay(d){
   const in_g95=d.tank_in_g95||d.in_g95||0,in_g91=d.tank_in_g91||d.in_g91||0,in_d=d.tank_in_d||d.in_d||0;
   return{g95_l,g95_sale,g91_l,g91_sale,d3_l,d3_sale,d4_l,d4_sale,air_l,air_net,totalFuelFull,totalLiter,cashTotal,mustSend,storeTotal,diff,change,disc,in_g95,in_g91,in_d};
 }
-function computeCash(d){if(!d.cash)return 0;const denoms=[1000,500,100,50,20,10,5,2,1];return denoms.reduce((s,v)=>{const qty=d.cash[String(v)]??d.cash[v]??0;return s+qty*v;},0);}
+function computeCash(d){if(!d.cash)return 0;const denoms=[1000,500,100,50,20];return denoms.reduce((s,v)=>{const qty=d.cash[String(v)]??d.cash[v]??0;return s+qty*v;},0)+(d.cash['coins']||0);}
 function computeTransfer(d){if(!d.transfer)return 0;return d.transfer.reduce((s,r)=>s+(r.amount||0),0);}
 function computeStore(d){if(!d.store)return 0;return d.store.reduce((s,r)=>s+(r.amount||0),0);}
 function getFilteredKeys(){
